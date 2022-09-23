@@ -2,3 +2,4 @@
 Estoy asiendo una prueba de como usar git
 
 Aprendiendo de como hacer el control de versiones correspondiente
+estoy asiendo un cambio en el archivo md
