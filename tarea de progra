@@ -1,0 +1,126 @@
+let AMOUNT_DIAMONDS = 30
+
+
+GamePlayManager = {
+    init: function() {
+        game.scale.scaleMode=Phaser.ScaleManager.SHOW_ALL;
+        game.scale.pageAlignHorizontally=true;
+        game.scale.pageAlignVertically=true;
+        this.flagFirstMouseDown=false;
+    },
+    preload: function() {
+        game.load.image("background","assets/images/background.png");
+        game.load.spritesheet('horse','assets/images/horse.png' , 84,156,2)
+        game.load.spritesheet('diamonds','assets/images/diamonds.png' , 81,84,4)
+    },
+
+    create: function() {
+        game.add.sprite(0,0,'background');
+
+        this.horse = game.add.sprite(0,0,'horse');
+
+        this.horse.frame=0;
+
+        this.horse.x=game.width/2;
+        this.horse.y=game.height/2;
+
+        // Se establece el centro de coordenadas del sprite 'horse' en el punto (1,1)
+        this.horse.anchor.setTo(1);
+
+        // Se establece la rotacion del sprite 'horse' en 90 grados
+        this.horse.angle=90;
+
+        // Se establece el escalado del sprite 'horse' a (1,1) (originalmente era 1,1)
+        this.horse.scale.setTo(1,1);
+
+        // Se establece la transparencia del sprite 'horse' a 1 (originalmente era 1)
+        this.horse.alpha=1
+
+        // Se añade un evento de clic al juego. Cada vez que se hace clic en el juego, se llama a la funcion 'onTap' de este objeto
+        game.input.onDown.add(this.onTap, this);
+
+    
+        this.diamonds = []; // Se crea un array para almacenar los diamantes creados
+        for (let i = 0; i < AMOUNT_DIAMONDS; i++) {
+            let diamond = game.add.sprite(100,100,'diamonds'); // Se crea un nuevo sprite llamado 'diamond'
+            diamond.frame = game.rnd.integerInRange(0,3) // Se establece el frame del sprite aleatoriamente entre 0 y 3
+            diamond.scale.setTo(0.30 + game.rnd.frac()) // Se establece el escalado del sprite aleatoriamente entre 0.30 y 0.60, más el resto de la parte decimal generada por `game.rnd.frac()`
+            diamond.anchor.setTo(0.5) // Se establece el centro de coordenadas del sprite en el punto (0.5,0.5)
+            diamond.x=game.rnd.integerInRange(50,1050) // Se establece la posicion x del sprite aleatoriamente entre 50 y 1050
+            diamond.y=game.rnd.integerInRange(50,600) // Se establece la posicion y del sprite aleatoriamente entre 50 y 600
+
+            this.diamonds[i] = diamond
+
+            let currentDiamond= this.getBoundsDiamonds(diamond)
+            let rectHorse = this.getBoundsDiamonds(this.horse)
+
+            while(this.isOverlapinOtherDiamond(i,currentDiamond) || this.isRectangleOverlap(rectHorse, currentDiamond)){
+                diamond.x = game.rnd.integerInRange(50,1050)
+                diamond.y = game.rnd.integerInRange(50,600)      
+                
+                currentDiamond= this.getBoundsDiamonds(diamond)
+            }
+        }
+    },
+    onTap: function() {
+        this.flagFirstMouseDown=true;
+    },
+
+    getBoundsDiamonds: function(currentDiamond) {
+        return new Phaser.Rectangle(currentDiamond.left , currentDiamond.top , currentDiamond.width , currentDiamond.height)
+    },
+
+    isRectangleOverlap:function(rect1, rect2) {
+        if(rect1.x > rect2.x+rect2.width || rect2.x > rect1.x+rect1.width) {
+            return false
+        }
+
+        if(rect1.y > rect2.y+rect2.height || rect2.y > rect1.y+rect1.height) {
+            return false
+        }
+
+        return true
+    },
+
+    isOverlapinOtherDiamond : function(index,rect2) {
+        for(let i=0 ; i<index ; i++){
+            let rect1 = this.getBoundsDiamonds(this.diamonds[i])
+            if(this.isRectangleOverlap(rect1, rect2))
+                return true
+        }
+        return false
+    },
+    update: function() {
+        this.horse.angle += 1
+      // Si se ha hecho clic en la pantalla por primera vez, entra en esta condicin
+      if (this.flagFirstMouseDown) {
+        // Obtenemos la posicion del puntero en la pantalla
+        let pointerX = game.input.x;
+        let pointerY = game.input.y;
+
+        // Calculamos la distancia entre el puntero y la posicion actual del caballo
+        let distX = pointerX - this.horse.x;
+        let distY = pointerY - this.horse.y;
+
+        // Si la distancia en el eje X es positiva, el caballo mira hacia la derecha
+        // Si la distancia en el eje X es negativa, el caballo mira hacia la izquierda
+        if (distX > 0) {
+          this.horse.scale.setTo(1, 1);
+        } else {
+          this.horse.scale.setTo(-1, 1);
+        }
+
+        // Mueve el caballo hacia la posicion del puntero, pero solo un poco (0.02)
+        // Esto hace que el caballo se mueva hacia el puntero, pero no de golpe
+        this.horse.x += distX * 0.02;
+        this.horse.y += distY * 0.02;
+
+      }
+        
+    }
+}
+
+var game = new Phaser.Game(1136, 640, Phaser.CANVAS);
+    
+game.state.add("gameplay", GamePlayManager);
+game.state.start("gameplay");
